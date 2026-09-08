@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="../SimpleBrokeredMessaging.ChatConsole/SimpleBrokeredMessaging.ChatConsole.csproj" />
+  <Project Path="../SimpleBrokeredMessaging.Receiver/SimpleBrokeredMessaging.Receiver.csproj" />
+  <Project Path="../SimpleBrokeredMessaging.Sender/SimpleBrokeredMessaging.Sender.csproj" />
+</Solution>
