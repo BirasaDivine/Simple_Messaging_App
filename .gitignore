@@ -1,0 +1,25 @@
+# This repo root (source\repos) holds many unrelated projects.
+# Only the SimpleBrokeredMessaging solution is tracked here.
+
+# Ignore everything by default
+*
+
+# Un-ignore the SimpleBrokeredMessaging solution folders + repo scaffolding
+!/SimpleBrokeredMessaging/
+!/SimpleBrokeredMessaging.ChatConsole/
+!/SimpleBrokeredMessaging.Receiver/
+!/SimpleBrokeredMessaging.Sender/
+!/.gitignore
+!/README.md
+
+# Un-ignore their contents
+!/SimpleBrokeredMessaging/**
+!/SimpleBrokeredMessaging.ChatConsole/**
+!/SimpleBrokeredMessaging.Receiver/**
+!/SimpleBrokeredMessaging.Sender/**
+
+# Re-exclude build artifacts / IDE state inside the tracked folders
+**/bin/
+**/obj/
+**/.vs/
+**/*.user
