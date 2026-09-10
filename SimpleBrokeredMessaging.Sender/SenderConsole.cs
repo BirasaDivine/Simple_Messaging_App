@@ -1,4 +1,5 @@
 ﻿using Azure.Messaging.ServiceBus;
+using SimpleBrokeredMessaging.Messaging;
 using System;
 
 namespace SimpleBrokeredMessaging.Sender
@@ -19,7 +20,9 @@ namespace SimpleBrokeredMessaging.Sender
             // create a service bus sender
             var sender = client.CreateSender(QueueName);
 
-            var messages = Sentence.Select(character => new ServiceBusMessage(character.ToString())).ToList();
+            var messages = Sentence
+                .Select((character, index) => JsonMessageSerializer.ToServiceBusMessage(new DemoMessage(index, character.ToString())))
+                .ToList();
 
             Console.WriteLine("Sending messages");
             await SendInBatchesAsync(sender, messages);

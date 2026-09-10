@@ -1,6 +1,7 @@
 ﻿using Azure.Messaging.ServiceBus;
 using Azure.Messaging.ServiceBus.Administration;
 using Microsoft.Azure.Amqp.Framing;
+using SimpleBrokeredMessaging.Messaging;
 using static System.Net.Mime.MediaTypeNames;
 
 namespace SimpleBrokeredMessaging.ChatConsole
@@ -47,7 +48,8 @@ namespace SimpleBrokeredMessaging.ChatConsole
             //start the message processor
             await processor.StartProcessingAsync();
             //send a hello message
-            var helloMessage = new ServiceBusMessage($"{userName} has entered the room");
+            var helloMessage = JsonMessageSerializer.ToServiceBusMessage(
+                new ChatMessage(userName!, $"{userName} has entered the room", ChatMessageType.Join, DateTimeOffset.UtcNow));
             await serviceBusSender.SendMessageAsync(helloMessage);
             while (true)
             {
@@ -56,10 +58,12 @@ namespace SimpleBrokeredMessaging.ChatConsole
                 {
                     break;
                 }
-                var message = new ServiceBusMessage($"{userName} > {text}"  );
+                var message = JsonMessageSerializer.ToServiceBusMessage(
+                    new ChatMessage(userName!, text ?? string.Empty, ChatMessageType.Chat, DateTimeOffset.UtcNow));
                 await serviceBusSender.SendMessageAsync(message);
             }
-            var goodbyeMessage = new ServiceBusMessage($"{userName} has left the room");
+            var goodbyeMessage = JsonMessageSerializer.ToServiceBusMessage(
+                new ChatMessage(userName!, $"{userName} has left the room", ChatMessageType.Leave, DateTimeOffset.UtcNow));
             await serviceBusSender.SendMessageAsync(goodbyeMessage);
             // Close the message processor
             await processor.StopProcessingAsync();
@@ -69,8 +73,11 @@ namespace SimpleBrokeredMessaging.ChatConsole
         }
         static async Task MessageHandler(ProcessMessageEventArgs args)
         {
-            var test = args.Message.Body.ToString();
-            Console.WriteLine(test);
+            var chatMessage = JsonMessageSerializer.FromServiceBusMessage<ChatMessage>(args.Message);
+            var line = chatMessage.Type == ChatMessageType.Chat
+                ? $"{chatMessage.SenderName} > {chatMessage.Text}"
+                : chatMessage.Text;
+            Console.WriteLine(line);
             // Complete the message
             await args.CompleteMessageAsync(args.Message);
         }

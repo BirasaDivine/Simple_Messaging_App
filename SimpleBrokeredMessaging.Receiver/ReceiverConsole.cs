@@ -1,4 +1,5 @@
 ﻿using Azure.Messaging.ServiceBus;
+using SimpleBrokeredMessaging.Messaging;
 
 namespace SimpleBrokeredMessaging.Receiver
 {
@@ -24,7 +25,8 @@ namespace SimpleBrokeredMessaging.Receiver
                 var message = await receiver.ReceiveMessageAsync();
                 if (message != null)
                 {
-                    Console.Write(message.Body.ToString());
+                    var payload = JsonMessageSerializer.FromServiceBusMessage<DemoMessage>(message);
+                    Console.Write(payload.Text);
 
                     //complete the message
                     await receiver.CompleteMessageAsync(message);
