@@ -16,24 +16,58 @@ namespace SimpleBrokeredMessaging.Sender
             //create a service bus client
             var client = new ServiceBusClient(ConnectionString);
 
-
             // create a service bus sender
-
             var sender = client.CreateSender(QueueName);
 
-            //send some message
+            var messages = Sentence.Select(character => new ServiceBusMessage(character.ToString())).ToList();
+
             Console.WriteLine("Sending messages");
-            foreach (var character in Sentence)
-            {
-                var message = new ServiceBusMessage(character.ToString());
-                await sender.SendMessageAsync(message);
-                Console.WriteLine($"Sent : {character}");
-            }
+            await SendInBatchesAsync(sender, messages);
+            Console.WriteLine("Sent messages.");
+
             //close the sender
             await sender.CloseAsync();
-            Console.WriteLine("Sent messages.");
             Console.ReadLine();
         }
 
+        static async Task SendInBatchesAsync(ServiceBusSender sender, IReadOnlyList<ServiceBusMessage> messages)
+        {
+            var batch = await sender.CreateMessageBatchAsync();
+            var batchesSent = 0;
+
+            foreach (var message in messages)
+            {
+                if (batch.TryAddMessage(message))
+                {
+                    continue;
+                }
+
+                if (batch.Count == 0)
+                {
+                    throw new InvalidOperationException($"Message is too large to fit in an empty batch: \"{message.Body}\"");
+                }
+
+                await sender.SendMessagesAsync(batch);
+                Console.WriteLine($"Sent batch of {batch.Count} message(s).");
+                batchesSent++;
+                batch.Dispose();
+
+                batch = await sender.CreateMessageBatchAsync();
+                if (!batch.TryAddMessage(message))
+                {
+                    throw new InvalidOperationException($"Message is too large to fit in an empty batch: \"{message.Body}\"");
+                }
+            }
+
+            if (batch.Count > 0)
+            {
+                await sender.SendMessagesAsync(batch);
+                Console.WriteLine($"Sent batch of {batch.Count} message(s).");
+                batchesSent++;
+            }
+
+            batch.Dispose();
+            Console.WriteLine($"Sent {messages.Count} message(s) in {batchesSent} batch(es).");
         }
     }
+}
