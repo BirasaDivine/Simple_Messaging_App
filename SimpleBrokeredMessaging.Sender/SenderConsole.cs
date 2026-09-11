@@ -21,8 +21,9 @@ namespace SimpleBrokeredMessaging.Sender
             var sender = client.CreateSender(QueueName);
 
             var messages = Sentence
-                .Select((character, index) => JsonMessageSerializer.ToServiceBusMessage(new DemoMessage(index, character.ToString())))
-                .ToList();
+            .Split(' ')
+            .Select((word, index) => JsonMessageSerializer.ToServiceBusMessage(new DemoMessage(index, word)))
+            .ToList();
 
             Console.WriteLine("Sending messages");
             await SendInBatchesAsync(sender, messages);

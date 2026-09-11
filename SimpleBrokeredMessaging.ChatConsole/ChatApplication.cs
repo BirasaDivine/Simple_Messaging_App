@@ -1,8 +1,7 @@
 ﻿using Azure.Messaging.ServiceBus;
 using Azure.Messaging.ServiceBus.Administration;
-using Microsoft.Azure.Amqp.Framing;
 using SimpleBrokeredMessaging.Messaging;
-using static System.Net.Mime.MediaTypeNames;
+
 
 namespace SimpleBrokeredMessaging.ChatConsole
 {
@@ -16,6 +15,10 @@ namespace SimpleBrokeredMessaging.ChatConsole
         {
             Console.WriteLine("Enter name:");
             var userName = Console.ReadLine();
+            //Add a guard to validate the username
+            if (string.IsNullOrWhiteSpace(userName)) {
+                throw new ArgumentException("Invalid data: The USERNAME cannot be empty or null");
+            }
             //Create an administration client to manage artifacts
             var serviceBusAdministrationClient = new ServiceBusAdministrationClient(ConnectionString);
 
@@ -49,7 +52,7 @@ namespace SimpleBrokeredMessaging.ChatConsole
             await processor.StartProcessingAsync();
             //send a hello message
             var helloMessage = JsonMessageSerializer.ToServiceBusMessage(
-                new ChatMessage(userName!, $"{userName} has entered the room", ChatMessageType.Join, DateTimeOffset.UtcNow));
+                new ChatMessage(userName, $"{userName} has entered the room", ChatMessageType.Join, DateTimeOffset.UtcNow));
             await serviceBusSender.SendMessageAsync(helloMessage);
             while (true)
             {
@@ -59,11 +62,11 @@ namespace SimpleBrokeredMessaging.ChatConsole
                     break;
                 }
                 var message = JsonMessageSerializer.ToServiceBusMessage(
-                    new ChatMessage(userName!, text ?? string.Empty, ChatMessageType.Chat, DateTimeOffset.UtcNow));
+                    new ChatMessage(userName, text ?? string.Empty, ChatMessageType.Chat, DateTimeOffset.UtcNow));
                 await serviceBusSender.SendMessageAsync(message);
             }
             var goodbyeMessage = JsonMessageSerializer.ToServiceBusMessage(
-                new ChatMessage(userName!, $"{userName} has left the room", ChatMessageType.Leave, DateTimeOffset.UtcNow));
+                new ChatMessage(userName, $"{userName} has left the room", ChatMessageType.Leave, DateTimeOffset.UtcNow));
             await serviceBusSender.SendMessageAsync(goodbyeMessage);
             // Close the message processor
             await processor.StopProcessingAsync();
@@ -73,17 +76,27 @@ namespace SimpleBrokeredMessaging.ChatConsole
         }
         static async Task MessageHandler(ProcessMessageEventArgs args)
         {
-            var chatMessage = JsonMessageSerializer.FromServiceBusMessage<ChatMessage>(args.Message);
-            var line = chatMessage.Type == ChatMessageType.Chat
-                ? $"{chatMessage.SenderName} > {chatMessage.Text}"
-                : chatMessage.Text;
-            Console.WriteLine(line);
-            // Complete the message
-            await args.CompleteMessageAsync(args.Message);
+            try
+            {
+                var chatMessage = JsonMessageSerializer.FromServiceBusMessage<ChatMessage>(args.Message);
+                var line = chatMessage.Type == ChatMessageType.Chat
+                    ? $"{chatMessage.SenderName} > {chatMessage.Text}"
+                    : chatMessage.Text;
+                Console.WriteLine(line);
+                // Complete the message
+                await args.CompleteMessageAsync(args.Message);
+            }
+            catch (Exception ex) {
+                Console.WriteLine($"Failed to process message : {ex.Message}");
+                await args.DeadLetterMessageAsync(args.Message, "ProcessingFailed", ex.Message);
+            }
+            
         }
-        static async Task ErrorHandler(ProcessErrorEventArgs args)
+        static  Task ErrorHandler(ProcessErrorEventArgs args)
         {
-            throw new NotImplementedException();
+            Console.WriteLine($"Error in {args.ErrorSource} : {args.Exception.Message}");
+            return Task.CompletedTask;
+
         }
 
     }

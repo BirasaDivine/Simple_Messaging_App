@@ -25,11 +25,19 @@ namespace SimpleBrokeredMessaging.Receiver
                 var message = await receiver.ReceiveMessageAsync();
                 if (message != null)
                 {
-                    var payload = JsonMessageSerializer.FromServiceBusMessage<DemoMessage>(message);
-                    Console.Write(payload.Text);
+                    try
+                    {
+                        var payload = JsonMessageSerializer.FromServiceBusMessage<DemoMessage>(message);
+                        Console.Write(payload.Text);
 
-                    //complete the message
-                    await receiver.CompleteMessageAsync(message);
+                        //complete the message
+                        await receiver.CompleteMessageAsync(message);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Failed to deserialize message : {ex.Message}");
+                        await receiver.DeadLetterMessageAsync(message, "DeserializationFailed", ex.Message);
+                    }
                 }
                 else
                 {

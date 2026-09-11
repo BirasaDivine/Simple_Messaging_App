@@ -3,4 +3,5 @@
   <Project Path="../SimpleBrokeredMessaging.Messaging/SimpleBrokeredMessaging.Messaging.csproj" />
   <Project Path="../SimpleBrokeredMessaging.Receiver/SimpleBrokeredMessaging.Receiver.csproj" />
   <Project Path="../SimpleBrokeredMessaging.Sender/SimpleBrokeredMessaging.Sender.csproj" />
+  <Project Path="SimpleBrokeredMessaging.csproj" />
 </Solution>
