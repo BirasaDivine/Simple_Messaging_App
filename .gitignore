@@ -7,6 +7,7 @@
 # Un-ignore the SimpleBrokeredMessaging solution folders + repo scaffolding
 !/SimpleBrokeredMessaging/
 !/SimpleBrokeredMessaging.ChatConsole/
+!/SimpleBrokeredMessaging.Messaging/
 !/SimpleBrokeredMessaging.Receiver/
 !/SimpleBrokeredMessaging.Sender/
 !/.gitignore
@@ -15,6 +16,7 @@
 # Un-ignore their contents
 !/SimpleBrokeredMessaging/**
 !/SimpleBrokeredMessaging.ChatConsole/**
+!/SimpleBrokeredMessaging.Messaging/**
 !/SimpleBrokeredMessaging.Receiver/**
 !/SimpleBrokeredMessaging.Sender/**
 
